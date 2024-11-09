@@ -13,29 +13,36 @@ RUN rm /etc/supervisor/supervisord/conf.d/serviceportal.conf
 RUN rm /etc/supervisor/supervisord/conf.d/sshd.conf
 RUN rm /etc/supervisor/supervisord/conf.d/syncthing.conf
 
-# We also need to copy the comfyui-api binary into the image, since ComfyUI
-# is fully asyncronous by default, and has no convenient way to retrieve 
-# generated images. If you're adding a custom worker, you'll need to copy it in here.
-# COPY comfyui-api .
+# Download ComfyUI API binary
 ARG api_version=1.5.0
 ADD https://github.com/SaladTechnologies/comfyui-api/releases/download/${api_version}/comfyui-api .
 RUN chmod +x comfyui-api
 
-# Set up some environment variables for the worker
+# Set up environment variables
 ENV MODEL_DIR=/opt/ComfyUI/models
 ENV OUTPUT_DIR=/opt/ComfyUI/output
 ENV INPUT_DIR=/opt/ComfyUI/input
-
-# Startup can take a little longer with larger models.
-# This configures the worker binary's built-in health check.
 ENV STARTUP_CHECK_MAX_TRIES=30
 
-# Install comfy-cli, which makes it easy to install custom nodes and other comfy specific functionality.
+# Install required packages
 RUN pip install --upgrade pip
-RUN pip install comfy-cli
+RUN pip install comfy-cli fastapi uvicorn python-multipart aiofiles
 
-# Disable tracking and set the default directory to /opt/ComfyUI/
+# Clone the model-manager repository
+RUN git clone https://github.com/prikshitsingh24/gigai-image-model-api.git
+
+# Disable tracking and set default directory
 RUN echo "N" | comfy tracking disable
 RUN comfy set-default /opt/ComfyUI/
 
-CMD ["./comfyui-api"]
+# Create start script to run both services
+RUN echo '#!/bin/bash\n\
+python gigai-image-model-api/src/main.py &\n\
+./comfyui-api' > start.sh
+
+RUN chmod +x start.sh
+
+# Expose both API ports
+EXPOSE 3000 8000
+
+CMD ["./start.sh"]
