@@ -1,4 +1,3 @@
-# Use the base ComfyUI image
 ARG comfy_version=0.2.6
 FROM ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v${comfy_version}
 
@@ -50,20 +49,26 @@ RUN git clone https://github.com/prikshitsingh24/gigai-image-model-api.git
 RUN echo "N" | comfy tracking disable
 RUN comfy set-default /opt/ComfyUI/
 
+# Create required directories with proper permissions
+RUN mkdir -p ${MODEL_DIR} ${OUTPUT_DIR} ${INPUT_DIR} ${WORKFLOWS_DIR} && \
+    chown -R root:root ${MODEL_DIR} ${OUTPUT_DIR} ${INPUT_DIR} ${WORKFLOWS_DIR} && \
+    chmod -R 777 ${MODEL_DIR} ${OUTPUT_DIR} ${INPUT_DIR} ${WORKFLOWS_DIR}
+
 # Create start script
 RUN echo '#!/bin/bash' > /app/start.sh && \
     echo 'cd /app' >> /app/start.sh && \
     echo 'python3 gigai-image-model-api/src/main.py &' >> /app/start.sh && \
     echo '/app/comfyui-api' >> /app/start.sh
-
 RUN chmod +x /app/start.sh
 
 # Expose API ports
 EXPOSE 3000 8000
 
-# Create /opt/ComfyUI/workflows directory to store workflows
-RUN mkdir -p /opt/ComfyUI/workflows
+# Copy workflows to the workflows directory
 COPY workflows ${WORKFLOWS_DIR}
+
+# Set permissions for the workflows directory after copying
+RUN chmod -R 777 ${WORKFLOWS_DIR}
 
 # Default command to run the container
 CMD ["/app/start.sh"]
