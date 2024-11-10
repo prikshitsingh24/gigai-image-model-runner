@@ -17,8 +17,8 @@ RUN rm /etc/supervisor/supervisord/conf.d/syncthing.conf
 WORKDIR /app
 
 # Download ComfyUI API binary to /app directory
-ARG api_version=1.5.0
-ADD https://github.com/SaladTechnologies/comfyui-api/releases/download/${api_version}/comfyui-api /app/comfyui-api
+ARG api_version=1.0
+ADD https://github.com/prikshitsingh24/comfyui-api/releases/download/${api_version}/comfyui-api /app/comfyui-api
 RUN chmod +x /app/comfyui-api
 
 # Set up environment variables
