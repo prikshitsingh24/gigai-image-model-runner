@@ -1,11 +1,12 @@
+# Use the base ComfyUI image
 ARG comfy_version=0.2.6
 FROM ghcr.io/ai-dock/comfyui:v2-cuda-12.1.1-base-22.04-v${comfy_version}
 
-# Disable the authentication and cloudflare tunnels provided by the base image
+# Disable unnecessary services
 ENV WEB_ENABLE_AUTH=false
 ENV CF_QUICK_TUNNELS=false
 
-# Disable a bunch of services we don't need for the worker
+# Clean up unnecessary services
 RUN rm /etc/supervisor/supervisord/conf.d/jupyter.conf
 RUN rm /etc/supervisor/supervisord/conf.d/storagemonitor.conf
 RUN rm /etc/supervisor/supervisord/conf.d/comfyui_api_wrapper.conf
@@ -13,7 +14,7 @@ RUN rm /etc/supervisor/supervisord/conf.d/serviceportal.conf
 RUN rm /etc/supervisor/supervisord/conf.d/sshd.conf
 RUN rm /etc/supervisor/supervisord/conf.d/syncthing.conf
 
-# Set up working directory
+# Set up working directory for ComfyUI
 WORKDIR /app
 
 # Download ComfyUI API binary to /app directory
@@ -25,6 +26,7 @@ RUN chmod +x /app/comfyui-api
 ENV MODEL_DIR=/opt/ComfyUI/models
 ENV OUTPUT_DIR=/opt/ComfyUI/output
 ENV INPUT_DIR=/opt/ComfyUI/input
+ENV WORKFLOWS_DIR=/opt/ComfyUI/workflows
 ENV STARTUP_CHECK_MAX_TRIES=30
 ENV PATH="/usr/local/bin:${PATH}"
 
@@ -37,7 +39,7 @@ RUN apt-get update && apt-get install -y \
 # Create Python symlink
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-# Install required packages
+# Install required Python packages
 RUN pip3 install --upgrade pip
 RUN pip3 install comfy-cli fastapi uvicorn python-multipart aiofiles
 
@@ -56,7 +58,11 @@ RUN echo '#!/bin/bash' > /app/start.sh && \
 
 RUN chmod +x /app/start.sh
 
-# Expose both API ports
+# Expose API ports
 EXPOSE 3000 8000
 
+# Create /opt/ComfyUI/workflows directory to store workflows
+RUN mkdir -p /opt/ComfyUI/workflows
+
+# Default command to run the container
 CMD ["/app/start.sh"]
