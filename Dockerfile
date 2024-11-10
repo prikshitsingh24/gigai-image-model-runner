@@ -63,6 +63,7 @@ EXPOSE 3000 8000
 
 # Create /opt/ComfyUI/workflows directory to store workflows
 RUN mkdir -p /opt/ComfyUI/workflows
+COPY workflows ${WORKFLOWS_DIR}
 
 # Default command to run the container
 CMD ["/app/start.sh"]
