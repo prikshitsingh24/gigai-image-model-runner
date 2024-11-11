@@ -33,6 +33,7 @@ ENV PATH="/usr/local/bin:${PATH}"
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 # Create Python symlink
